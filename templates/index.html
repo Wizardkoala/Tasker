@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Task Dashboard</h1>
+        <div class="controls">
+            <div>
+                <label for="limitSelect">Top Tasks to show:</label>
+                <select id="limitSelect" onchange="window.location.href='/?limit=' + this.value">
+                    <option value="3" {% if limit==3 %}selected{% endif %}>3</option>
+                    <option value="5" {% if limit==5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if limit==10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if limit==15 %}selected{% endif %}>15</option>
+                </select>
+            </div>
+            <button onclick="document.getElementById('addModal').style.display='block'">+ Add Task</button>
+        </div>
+    </div>
+
+    <!-- TOP HALF: Highlighted Priority Tasks -->
+    <h2 class="section-title">Top Priorities</h2>
+    {% if top_tasks %}
+    {% for idx, task in top_tasks %}
+    <div class="task">
+        <div class="task-content">
+            <form action="/complete/{{ idx }}" method="POST">
+                <input type="checkbox" onchange="this.form.submit()">
+            </form>
+            <div class="task-details">
+                <strong>{{ task.title }}</strong>
+                <span class="category-badge">{{ task.category }}</span>
+                <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Priority: {{ task.priority }})</span>
+                <p>{{ task.desc }}</p>
+                <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+            </div>
+        </div>
+        <form action="/delete/{{ idx }}" method="POST">
+            <button type="submit" class="delete-btn">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="color: #666; font-style: italic;">No pending tasks! You are all caught up.</p>
+    {% endif %}
+
+
+    <!-- BOTTOM HALF: All Tasks in Columns -->
+    <h2 class="section-title">All Tasks by Category</h2>
+    <div class="all-tasks-container">
+        {% for category, tasks in all_categorized_tasks.items() %}
+        <div class="category-column">
+            <h3>{{ category }}</h3>
+            {% for idx, task in tasks %}
+            <div class="task {% if task.complete %}completed{% endif %}">
+                <div class="task-content">
+                    <form action="/complete/{{ idx }}" method="POST">
+                        <input type="checkbox" onchange="this.form.submit()" {% if task.complete %}checked disabled{%
+                            endif %}>
+                    </form>
+                    <div class="task-details">
+                        <strong>{{ task.title }}</strong>
+                        {% if task.complete %}
+                        <p class="due-date">Completed: {{ task.completed.strftime('%b %d, %Y') }}</p>
+                        {% endif %}
+                        <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </div>
+                <form action="/delete/{{ idx }}" method="POST">
+                    <button type="submit" class="delete-btn">X</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #666; font-style: italic;">No tasks exist in the database.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Add Task Popup Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+            <h2>Create New Task</h2>
+            <form action="/add" method="POST">
+                <div class="form-group">
+                    <label>Title:</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea name="description" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <input type="text" name="category" placeholder="e.g. Work, Home">
+                </div>
+                <div class="form-group">
+                    <label>Priority (1 = Highest, 5 = Lowest):</label>
+                    <input type="number" name="priority" value="3" min="1" max="5">
+                </div>
+                <div class="form-group">
+                    <label>Due Date:</label>
+                    <input type="date" name="due">
+                </div>
+                <button type="submit" style="width: 100%;">Save Task</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.onclick = function (event) {
+            let modal = document.getElementById('addModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+
+</html>
