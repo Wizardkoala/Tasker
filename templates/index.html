@@ -27,58 +27,105 @@
 
     <!-- TOP HALF: Highlighted Priority Tasks -->
     <h2 class="section-title">Top Priorities</h2>
-    {% if top_tasks %}
-    {% for idx, task in top_tasks %}
-    <div class="task">
-        <div class="task-content">
-            <form action="/complete/{{ idx }}" method="POST">
-                <input type="checkbox" onchange="this.form.submit()">
-            </form>
-            <div class="task-details">
-                <strong>{{ task.title }}</strong>
-                <span class="category-badge">{{ task.category }}</span>
-                <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Priority: {{ task.priority }})</span>
-                <p>{{ task.desc }}</p>
-                <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+    <div id="top-priorities-section">
+        {% if top_tasks %}
+        {% for idx, task in top_tasks %}
+        <div class="task" data-task-id="{{ idx }}">
+            <div class="task-body">
+                <div class="task-content">
+                    <form action="/toggle/{{ idx }}" method="POST" class="action-form">
+                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{% endif %}>
+                    </form>
+                    <div class="task-details">
+                        <strong>{{ task.title }}</strong>
+                        <span class="category-badge">{{ task.category }}</span>
+                        <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Priority: {{ task.priority
+                            }})</span>
+                        {% if task.repeat["value"] %}
+                        <span class="repeat-badge">&#x21bb; every {{ task.repeat["value"] }} {{ task.repeat["interval"]
+                            }}(s)</span>
+                        {% endif %}
+                        <p>{{ task.desc }}</p>
+                        <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </div>
+                <form action="/delete/{{ idx }}" method="POST" class="action-form">
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
             </div>
+            {% if task.subtasks %}
+            <div class="subtasks">
+                {% for sub in task.subtasks %}
+                <div class="subtask">
+                    <form action="/toggle/{{ idx }}/sub/{{ loop.index0 }}" method="POST" class="action-form">
+                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{% endif %}>
+                    </form>
+                    <span class="{% if sub.complete %}subtask-done{% endif %}">{{ sub.title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
-        <form action="/delete/{{ idx }}" method="POST">
-            <button type="submit" class="delete-btn">Delete</button>
-        </form>
+        {% endfor %}
+        {% else %}
+        <p style="color: #666; font-style: italic;">No pending tasks! You are all caught up.</p>
+        {% endif %}
     </div>
-    {% endfor %}
-    {% else %}
-    <p style="color: #666; font-style: italic;">No pending tasks! You are all caught up.</p>
-    {% endif %}
 
 
     <!-- BOTTOM HALF: All Tasks in Columns -->
     <h2 class="section-title">All Tasks by Category</h2>
-    <div class="all-tasks-container">
+    <div class="all-tasks-container" id="all-tasks-container">
         {% for category, tasks in all_categorized_tasks.items() %}
-        <div class="category-column">
+        <div class="category-column" data-category="{{ category }}">
             <h3>{{ category }}</h3>
             {% for idx, task in tasks %}
-            <div class="task {% if task.complete %}completed{% endif %}">
-                <div class="task-content">
-                    <form action="/complete/{{ idx }}" method="POST">
-                        <input type="checkbox" onchange="this.form.submit()" {% if task.complete %}checked disabled{%
-                            endif %}>
-                    </form>
-                    <div class="task-details">
-                        <strong>{{ task.title }}</strong>
-                        {% if task.complete %}
-                        <p class="due-date">Completed: {{ task.completed.strftime('%b %d, %Y') }}</p>
-                        {% endif %}
-                        {% if task.repeat["value"] %}
-                        <p class="due-date">Repeats every {{task.repeat["value"]}} {{task.repeat["interval"]}}(s)</p>
-                        {% endif %}
-                        <p class=" due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+            <div class="task {% if task.complete %}completed{% endif %}" data-task-id="{{ idx }}">
+                <div class="task-body">
+                    <div class="task-content">
+                        <form action="/toggle/{{ idx }}" method="POST" class="action-form">
+                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{% endif
+                                %}>
+                        </form>
+                        <div class="task-details">
+                            <strong>{{ task.title }}</strong>
+                            {% if task.complete %}
+                            <p class="due-date">Completed: {{ task.completed.strftime('%b %d, %Y') }}</p>
+                            {% endif %}
+                            {% if task.repeat["value"] %}
+                            <p class="due-date">&#x21bb; Repeats every {{ task.repeat["value"] }} {{
+                                task.repeat["interval"] }}(s)</p>
+                            {% endif %}
+                            <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+                        </div>
                     </div>
+                    <form action="/delete/{{ idx }}" method="POST" class="action-form">
+                        <button type="submit" class="delete-btn">X</button>
+                    </form>
                 </div>
-                <form action="/delete/{{ idx }}" method="POST">
-                    <button type="submit" class="delete-btn">X</button>
-                </form>
+
+                {% if task.subtasks %}
+                <div class="subtasks">
+                    {% for sub in task.subtasks %}
+                    <div class="subtask">
+                        <form action="/toggle/{{ idx }}/sub/{{ loop.index0 }}" method="POST" class="action-form">
+                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{% endif
+                                %}>
+                        </form>
+                        <span class="{% if sub.complete %}subtask-done{% endif %}">{{ sub.title }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <details class="add-subtask-section">
+                    <summary>+ Add Subtask</summary>
+                    <form action="/add_subtask/{{ idx }}" method="POST" class="action-form add-subtask-form">
+                        <input type="text" name="title" placeholder="Subtask title" required>
+                        <input type="date" name="due">
+                        <button type="submit">Add</button>
+                    </form>
+                </details>
             </div>
             {% endfor %}
         </div>
@@ -92,7 +139,7 @@
         <div class="modal-content">
             <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
             <h2>Create New Task</h2>
-            <form action="/add" method="POST">
+            <form action="/add" method="POST" class="action-form">
                 <div class="form-group">
                     <label>Title:</label>
                     <input type="text" name="title" required>
@@ -113,18 +160,208 @@
                     <label>Due Date:</label>
                     <input type="date" name="due">
                 </div>
+                <div class="form-group">
+                    <label>Repeat Every:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" name="repeat_value" value="0" min="0"
+                            style="width: 80px; flex: none; padding: 8px;">
+                        <select name="repeat_interval" style="flex: 1; padding: 8px;">
+                            <option value="day">Days</option>
+                            <option value="week">Weeks</option>
+                            <option value="month">Months</option>
+                        </select>
+                    </div>
+                </div>
                 <button type="submit" style="width: 100%;">Save Task</button>
             </form>
         </div>
     </div>
 
     <script>
-        window.onclick = function (event) {
-            let modal = document.getElementById('addModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
+        // ── Utilities ──────────────────────────────────────────────────────────────
+
+        function esc(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // ── Render helpers ─────────────────────────────────────────────────────────
+        // Build HTML strings from the task JSON the server returns.
+        // These mirror the Jinja2 templates so the DOM stays consistent.
+
+        function subtasksHtml(task) {
+            if (!task.subtasks.length) return '';
+            return '<div class="subtasks">' +
+                task.subtasks.map((sub, i) =>
+                    `<div class="subtask">
+                        <form action="/toggle/${task.id}/sub/${i}" method="POST" class="action-form">
+                            <input type="checkbox" onchange="this.form.requestSubmit()"${sub.complete ? ' checked' : ''}>
+                        </form>
+                        <span class="${sub.complete ? 'subtask-done' : ''}">${esc(sub.title)}</span>
+                    </div>`
+                ).join('') +
+                '</div>';
+        }
+
+        function allTaskCardHtml(task) {
+            return `<div class="task${task.complete ? ' completed' : ''}" data-task-id="${task.id}">
+                <div class="task-body">
+                    <div class="task-content">
+                        <form action="/toggle/${task.id}" method="POST" class="action-form">
+                            <input type="checkbox" onchange="this.form.requestSubmit()"${task.complete ? ' checked' : ''}>
+                        </form>
+                        <div class="task-details">
+                            <strong>${esc(task.title)}</strong>
+                            ${task.complete ? `<p class="due-date">Completed: ${task.completed}</p>` : ''}
+                            ${task.repeat.value ? `<p class="due-date">&#x21bb; Repeats every ${task.repeat.value} ${esc(task.repeat.interval)}(s)</p>` : ''}
+                            <p class="due-date">Due: ${task.due}</p>
+                        </div>
+                    </div>
+                    <form action="/delete/${task.id}" method="POST" class="action-form">
+                        <button type="submit" class="delete-btn">X</button>
+                    </form>
+                </div>
+                ${subtasksHtml(task)}
+                <details class="add-subtask-section">
+                    <summary>+ Add Subtask</summary>
+                    <form action="/add_subtask/${task.id}" method="POST" class="action-form add-subtask-form">
+                        <input type="text" name="title" placeholder="Subtask title" required>
+                        <input type="date" name="due">
+                        <button type="submit">Add</button>
+                    </form>
+                </details>
+            </div>`;
+        }
+
+        function topTaskCardHtml(task) {
+            return `<div class="task" data-task-id="${task.id}">
+                <div class="task-body">
+                    <div class="task-content">
+                        <form action="/toggle/${task.id}" method="POST" class="action-form">
+                            <input type="checkbox" onchange="this.form.requestSubmit()"${task.complete ? ' checked' : ''}>
+                        </form>
+                        <div class="task-details">
+                            <strong>${esc(task.title)}</strong>
+                            <span class="category-badge">${esc(task.category)}</span>
+                            <span style="font-size:0.8em;color:#888;margin-left:5px">(Priority: ${task.priority})</span>
+                            ${task.repeat.value ? `<span class="repeat-badge">&#x21bb; every ${task.repeat.value} ${esc(task.repeat.interval)}(s)</span>` : ''}
+                            <p>${esc(task.desc)}</p>
+                            <p class="due-date">Due: ${task.due}</p>
+                            ${subtasksHtml(task)}
+                        </div>
+                    </div>
+                    <form action="/delete/${task.id}" method="POST" class="action-form">
+                        <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                </div>
+            </div>`;
+        }
+
+        // ── DOM helpers ────────────────────────────────────────────────────────────
+
+        async function refreshTopSection() {
+            const limit = document.getElementById('limitSelect')?.value ?? 5;
+            const res = await fetch(`/api/top?limit=${limit}`);
+            const tasks = await res.json();
+            const section = document.getElementById('top-priorities-section');
+            section.innerHTML = tasks.length
+                ? tasks.map(topTaskCardHtml).join('')
+                : '<p style="color:#666;font-style:italic">No pending tasks! You are all caught up.</p>';
+        }
+
+        function updateAllTasksCard(task) {
+            const el = document.querySelector(`#all-tasks-container [data-task-id="${task.id}"]`);
+            if (el) el.outerHTML = allTaskCardHtml(task);
+        }
+
+        function removeTaskFromAllTasks(taskId) {
+            const el = document.querySelector(`#all-tasks-container [data-task-id="${taskId}"]`);
+            if (!el) return;
+            const col = el.closest('.category-column');
+            el.remove();
+            if (col && col.querySelectorAll('.task').length === 0) col.remove();
+            const container = document.getElementById('all-tasks-container');
+            if (!container.querySelector('.category-column')) {
+                container.innerHTML = '<p style="color:#666;font-style:italic">No tasks exist in the database.</p>';
             }
         }
+
+        function addTaskToAllTasks(task) {
+            const container = document.getElementById('all-tasks-container');
+            // Remove "no tasks" placeholder if present
+            const placeholder = container.querySelector(':scope > p');
+            if (placeholder) placeholder.remove();
+
+            const catAttr = task.category.replace(/"/g, '\\"');
+            let col = container.querySelector(`.category-column[data-category="${catAttr}"]`);
+            if (!col) {
+                col = document.createElement('div');
+                col.className = 'category-column';
+                col.dataset.category = task.category;
+                col.innerHTML = `<h3>${esc(task.category)}</h3>`;
+                container.appendChild(col);
+            }
+            col.insertAdjacentHTML('beforeend', allTaskCardHtml(task));
+        }
+
+        // ── Action dispatch ────────────────────────────────────────────────────────
+
+        const actionHandlers = {
+            async toggle(form, json) {
+                updateAllTasksCard(json.task);
+                await refreshTopSection();
+            },
+            async toggle_sub(form, json) {
+                updateAllTasksCard(json.task);
+                await refreshTopSection();
+            },
+            async delete(form, json) {
+                removeTaskFromAllTasks(json.deleted_id);
+                await refreshTopSection();
+            },
+            async add(form, json) {
+                addTaskToAllTasks(json.task);
+                document.getElementById('addModal').style.display = 'none';
+                form.reset();
+                await refreshTopSection();
+            },
+            async add_subtask(form, json) {
+                updateAllTasksCard(json.task);
+            },
+        };
+
+        function actionType(url) {
+            if (/\/toggle\/\d+\/sub\/\d+/.test(url)) return 'toggle_sub';
+            if (/\/toggle\/\d+/.test(url)) return 'toggle';
+            if (/\/delete\/\d+/.test(url)) return 'delete';
+            if (/\/add_subtask\/\d+/.test(url)) return 'add_subtask';
+            if (url.endsWith('/add')) return 'add';
+        }
+
+        // ── Event delegation ───────────────────────────────────────────────────────
+        // Listeners are on `document` so they work after any innerHTML swap.
+
+        document.addEventListener('submit', async function (e) {
+            const form = e.target;
+            if (!form.classList.contains('action-form')) return;
+            e.preventDefault();
+
+            try {
+                const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+                const json = await res.json();
+                if (!json.ok) { console.error('Server error:', json); return; }
+                const handler = actionHandlers[actionType(form.action)];
+                if (handler) await handler(form, json);
+            } catch (err) {
+                console.error('Action failed:', err);
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            const modal = document.getElementById('addModal');
+            if (modal && e.target === modal) modal.style.display = 'none';
+        });
     </script>
 
 </body>

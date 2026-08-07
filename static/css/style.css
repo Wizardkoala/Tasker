@@ -50,6 +50,9 @@ button.delete-btn:hover {
     border-radius: 6px;
     padding: 15px;
     margin-bottom: 10px;
+}
+
+.task-body {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -167,4 +170,80 @@ button.delete-btn:hover {
 .section-title {
     color: #444;
     margin-top: 40px;
+}
+
+.repeat-badge {
+    font-size: 0.75em;
+    background: #e8f4e8;
+    color: #2d7d2d;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+}
+
+.subtasks {
+    margin-top: 10px;
+    margin-left: 28px;
+    border-left: 2px solid #ddd;
+    padding-left: 12px;
+}
+
+.subtask {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 0.9em;
+}
+
+.subtask form {
+    margin: 0;
+    display: flex;
+}
+
+.subtask-done {
+    text-decoration: line-through;
+    color: #aaa;
+}
+
+.add-subtask-section {
+    margin-top: 8px;
+    margin-left: 28px;
+    font-size: 0.85em;
+}
+
+.add-subtask-section summary {
+    cursor: pointer;
+    color: #007bff;
+    user-select: none;
+}
+
+.add-subtask-section summary:hover {
+    color: #0056b3;
+}
+
+.add-subtask-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.add-subtask-form input[type="text"] {
+    flex: 1;
+    min-width: 120px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    box-sizing: border-box;
+}
+
+.add-subtask-form input[type="date"] {
+    padding: 4px 8px;
+    font-size: 0.9em;
+}
+
+.add-subtask-form button {
+    padding: 4px 10px;
+    font-size: 0.9em;
 }
