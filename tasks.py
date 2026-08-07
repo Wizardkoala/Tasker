@@ -107,7 +107,7 @@ class Tasks():
             
 
     class Task():
-        version = 0.1
+        version = 0.2
 
         def __init__(self, data={}):
             today = datetime.now()
@@ -147,6 +147,24 @@ class Tasks():
                 self.completed = completed_raw
             else:
                 self.completed = today + timedelta(days=30)
+
+        @property
+        def due_status(self):
+            if self.complete:
+                return "complete"
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            due = self.due.replace(hour=0, minute=0, second=0, microsecond=0)
+            delta = (due - today).days
+            if delta < 0:
+                return "overdue"
+            elif delta == 0:
+                return "today"
+            elif delta <= 3:
+                return "soon"
+            elif delta <= 7:
+                return "upcoming"
+            else:
+                return "fine"
 
 
 if __name__ == "__main__":

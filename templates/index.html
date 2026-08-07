@@ -3,7 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
 </head>
 
@@ -22,6 +25,9 @@
                 </select>
             </div>
             <button onclick="document.getElementById('addModal').style.display='block'">+ Add Task</button>
+            <form action="/clear_completed" method="POST" class="action-form" style="display:contents">
+                <button type="submit" class="delete-btn">Clear Completed</button>
+            </form>
         </div>
     </div>
 
@@ -30,21 +36,22 @@
     <div id="top-priorities-section">
         {% if top_tasks %}
         {% for idx, task in top_tasks %}
-        <div class="task" data-task-id="{{ idx }}">
+        <div class="task" data-task-id="{{ idx }}" data-due-status="{{ task.due_status }}">
             <div class="task-body">
                 <div class="task-content">
                     <form action="/toggle/{{ idx }}" method="POST" class="action-form">
-                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{% endif %}>
+                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{%
+                            endif %}>
                     </form>
                     <div class="task-details">
                         <strong>{{ task.title }}</strong>
                         <span class="category-badge">{{ task.category }}</span>
-                        <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Priority: {{ task.priority
-                            }})</span>
                         {% if task.repeat["value"] %}
                         <span class="repeat-badge">&#x21bb; every {{ task.repeat["value"] }} {{ task.repeat["interval"]
                             }}(s)</span>
                         {% endif %}
+                        <span style="font-size: 0.8em; color: #888; margin-left: 5px;">(Priority: {{ task.priority
+                            }})</span>
                         <p>{{ task.desc }}</p>
                         <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
                     </div>
@@ -58,7 +65,8 @@
                 {% for sub in task.subtasks %}
                 <div class="subtask">
                     <form action="/toggle/{{ idx }}/sub/{{ loop.index0 }}" method="POST" class="action-form">
-                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{% endif %}>
+                        <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{% endif
+                            %}>
                     </form>
                     <span class="{% if sub.complete %}subtask-done{% endif %}">{{ sub.title }}</span>
                 </div>
@@ -80,12 +88,13 @@
         <div class="category-column" data-category="{{ category }}">
             <h3>{{ category }}</h3>
             {% for idx, task in tasks %}
-            <div class="task {% if task.complete %}completed{% endif %}" data-task-id="{{ idx }}">
+            <div class="task {% if task.complete %}completed{% endif %}" data-task-id="{{ idx }}"
+                data-priority="{{ task.priority }}" data-due-status="{{ task.due_status }}">
                 <div class="task-body">
                     <div class="task-content">
                         <form action="/toggle/{{ idx }}" method="POST" class="action-form">
-                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{% endif
-                                %}>
+                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if task.complete %}checked{%
+                                endif %}>
                         </form>
                         <div class="task-details">
                             <strong>{{ task.title }}</strong>
@@ -93,15 +102,18 @@
                             <p class="due-date">Completed: {{ task.completed.strftime('%b %d, %Y') }}</p>
                             {% endif %}
                             {% if task.repeat["value"] %}
-                            <p class="due-date">&#x21bb; Repeats every {{ task.repeat["value"] }} {{
-                                task.repeat["interval"] }}(s)</p>
+                            <span class="repeat-badge">&#x21bb; every {{ task.repeat["value"] }} {{
+                                task.repeat["interval"]
+                                }}(s)</span>
                             {% endif %}
+                            <p>{{ task.desc }}</p>
                             <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
                         </div>
                     </div>
                     <form action="/delete/{{ idx }}" method="POST" class="action-form">
                         <button type="submit" class="delete-btn">X</button>
                     </form>
+                    <button type="button" class="edit-btn" onclick="toggleEdit(this)">Edit</button>
                 </div>
 
                 {% if task.subtasks %}
@@ -109,8 +121,8 @@
                     {% for sub in task.subtasks %}
                     <div class="subtask">
                         <form action="/toggle/{{ idx }}/sub/{{ loop.index0 }}" method="POST" class="action-form">
-                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{% endif
-                                %}>
+                            <input type="checkbox" onchange="this.form.requestSubmit()" {% if sub.complete %}checked{%
+                                endif %}>
                         </form>
                         <span class="{% if sub.complete %}subtask-done{% endif %}">{{ sub.title }}</span>
                     </div>
@@ -126,6 +138,37 @@
                         <button type="submit">Add</button>
                     </form>
                 </details>
+
+                <div class="edit-form">
+                    <form action="/edit/{{ idx }}" method="POST" class="action-form">
+                        <div class="edit-fields">
+                            <input type="text" name="title" value="{{ task.title }}" placeholder="Title" required>
+                            <textarea name="description" rows="2" placeholder="Description">{{ task.desc }}</textarea>
+                            <div class="edit-row">
+                                <input type="text" name="category" value="{{ task.category }}" placeholder="Category">
+                                <input type="number" name="priority" value="{{ task.priority }}" min="1" max="5"
+                                    title="Priority">
+                            </div>
+                            <div class="edit-row">
+                                <input type="date" name="due" value="{{ task.due.strftime('%Y-%m-%d') }}">
+                                <input type="number" name="repeat_value" value="{{ task.repeat['value'] }}" min="0"
+                                    style="width:60px">
+                                <select name="repeat_interval">
+                                    <option value="day" {% if task.repeat['interval']=='day' %}selected{% endif %}>Days
+                                    </option>
+                                    <option value="week" {% if task.repeat['interval']=='week' %}selected{% endif %}>
+                                        Weeks</option>
+                                    <option value="month" {% if task.repeat['interval']=='month' %}selected{% endif %}>
+                                        Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="edit-form-actions">
+                            <button type="submit">Save</button>
+                            <button type="button" onclick="toggleEdit(this)">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -186,6 +229,10 @@
                 .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        function toggleEdit(btn) {
+            btn.closest('[data-task-id]').classList.toggle('editing');
+        }
+
         // ── Render helpers ─────────────────────────────────────────────────────────
         // Build HTML strings from the task JSON the server returns.
         // These mirror the Jinja2 templates so the DOM stays consistent.
@@ -205,7 +252,11 @@
         }
 
         function allTaskCardHtml(task) {
-            return `<div class="task${task.complete ? ' completed' : ''}" data-task-id="${task.id}">
+            const optInterval = (val) =>
+                ['day', 'week', 'month'].map(v =>
+                    `<option value="${v}"${task.repeat.interval === v ? ' selected' : ''}>${v.charAt(0).toUpperCase() + v.slice(1)}s</option>`
+                ).join('');
+            return `<div class="task${task.complete ? ' completed' : ''}" data-task-id="${task.id}" data-priority="${task.priority}" data-due-status="${task.due_status}">
                 <div class="task-body">
                     <div class="task-content">
                         <form action="/toggle/${task.id}" method="POST" class="action-form">
@@ -215,12 +266,16 @@
                             <strong>${esc(task.title)}</strong>
                             ${task.complete ? `<p class="due-date">Completed: ${task.completed}</p>` : ''}
                             ${task.repeat.value ? `<p class="due-date">&#x21bb; Repeats every ${task.repeat.value} ${esc(task.repeat.interval)}(s)</p>` : ''}
+                            <p>${esc(task.desc)}</p>
                             <p class="due-date">Due: ${task.due}</p>
                         </div>
                     </div>
-                    <form action="/delete/${task.id}" method="POST" class="action-form">
-                        <button type="submit" class="delete-btn">X</button>
-                    </form>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <form action="/delete/${task.id}" method="POST" class="action-form">
+                            <button type="submit" class="delete-btn">X</button>
+                        </form>
+                        <button type="button" class="edit-btn" onclick="toggleEdit(this)">Edit</button>
+                    </div>
                 </div>
                 ${subtasksHtml(task)}
                 <details class="add-subtask-section">
@@ -231,11 +286,32 @@
                         <button type="submit">Add</button>
                     </form>
                 </details>
+                <div class="edit-form">
+                    <form action="/edit/${task.id}" method="POST" class="action-form">
+                        <div class="edit-fields">
+                            <input type="text" name="title" value="${esc(task.title)}" placeholder="Title" required>
+                            <textarea name="description" rows="2" placeholder="Description">${esc(task.desc)}</textarea>
+                            <div class="edit-row">
+                                <input type="text" name="category" value="${esc(task.category)}" placeholder="Category">
+                                <input type="number" name="priority" value="${task.priority}" min="1" max="5" title="Priority (1=highest)">
+                            </div>
+                            <div class="edit-row">
+                                <input type="date" name="due" value="${task.due_iso}">
+                                <input type="number" name="repeat_value" value="${task.repeat.value}" min="0" style="width:60px">
+                                <select name="repeat_interval">${optInterval()}</select>
+                            </div>
+                        </div>
+                        <div class="edit-form-actions">
+                            <button type="submit">Save</button>
+                            <button type="button" onclick="toggleEdit(this)">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>`;
         }
 
         function topTaskCardHtml(task) {
-            return `<div class="task" data-task-id="${task.id}">
+            return `<div class="task" data-task-id="${task.id}" data-due-status="${task.due_status}">
                 <div class="task-body">
                     <div class="task-content">
                         <form action="/toggle/${task.id}" method="POST" class="action-form">
@@ -287,6 +363,21 @@
             }
         }
 
+        function renderAllTasksSection(allTasks) {
+            const container = document.getElementById('all-tasks-container');
+            const entries = Object.entries(allTasks);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);font-style:italic">No tasks exist in the database.</p>';
+                return;
+            }
+            container.innerHTML = entries.map(([cat, tasks]) =>
+                `<div class="category-column" data-category="${esc(cat)}">
+                    <h3>${esc(cat)}</h3>
+                    ${tasks.map(allTaskCardHtml).join('')}
+                </div>`
+            ).join('');
+        }
+
         function addTaskToAllTasks(task) {
             const container = document.getElementById('all-tasks-container');
             // Remove "no tasks" placeholder if present
@@ -317,7 +408,7 @@
                 await refreshTopSection();
             },
             async delete(form, json) {
-                removeTaskFromAllTasks(json.deleted_id);
+                renderAllTasksSection(json.all_tasks);
                 await refreshTopSection();
             },
             async add(form, json) {
@@ -329,6 +420,17 @@
             async add_subtask(form, json) {
                 updateAllTasksCard(json.task);
             },
+            async edit(form, json) {
+                updateAllTasksCard(json.task);
+                await refreshTopSection();
+            },
+            async clear_completed(form, json) {
+                renderAllTasksSection(json.all_tasks);
+                const section = document.getElementById('top-priorities-section');
+                section.innerHTML = json.top_tasks.length
+                    ? json.top_tasks.map(topTaskCardHtml).join('')
+                    : '<p style="color:#666;font-style:italic">No pending tasks! You are all caught up.</p>';
+            },
         };
 
         function actionType(url) {
@@ -336,6 +438,8 @@
             if (/\/toggle\/\d+/.test(url)) return 'toggle';
             if (/\/delete\/\d+/.test(url)) return 'delete';
             if (/\/add_subtask\/\d+/.test(url)) return 'add_subtask';
+            if (/\/edit\/\d+/.test(url)) return 'edit';
+            if (url.endsWith('/clear_completed')) return 'clear_completed';
             if (url.endsWith('/add')) return 'add';
         }
 
@@ -347,6 +451,7 @@
             if (!form.classList.contains('action-form')) return;
             e.preventDefault();
 
+            const scrollY = window.scrollY;
             try {
                 const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
                 const json = await res.json();
@@ -356,6 +461,7 @@
             } catch (err) {
                 console.error('Action failed:', err);
             }
+            window.scrollTo({ top: scrollY, behavior: 'instant' });
         });
 
         document.addEventListener('click', function (e) {
