@@ -8,7 +8,6 @@ version = "ALPHA 0.0.1"
 app = Flask(__name__)
 task_manager = Tasks()
 
-## TODO: Track completion date
 ## TODO: Make it so it doest scroll on every update
 
 @app.route('/')

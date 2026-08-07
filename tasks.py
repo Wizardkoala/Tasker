@@ -10,7 +10,9 @@ class Tasks():
                 self.db = pickle.load(f)
         else:
             self.db = {"tasks": []}
-            self.save()
+
+        self._update_tasks()
+        self.save()
 
     def save(self):
         """Added a save method to write changes back to the pickle file."""
@@ -26,19 +28,40 @@ class Tasks():
 
     def get_due(self):
         tasks_due = []
-        today = datetime.now()
-        # Enumerate gives us the original list index to use for deletion/completion
+        today = datetime.now() 
+
         for i, task in enumerate(self.db["tasks"]):
             if task.due <= today:
                 tasks_due.append((i, task))
 
         return tasks_due
 
+    def _update_tasks(self):
+        updated = []
+        for task in self.db["tasks"]:
+            properties = dir(task)
+            data = {}
+
+            # Remove all the python added properties
+            for prop in properties:
+                if prop.startswith("__"):
+                    continue
+
+                data[prop] = task[prop]
+
+            updated.append(task)
+
+        self.db["task"] = updated
+            
+
     class Task():
+        version = 0.1
+
         def __init__(self, data={}):
             today = datetime.now()
             self.complete = data.get("complete", False)
             self.title = data.get("title", "Undefined")
+            self.repeat = data.get("repeat", {"value": 0, "interval": "day"})
             self.desc = data.get("description", "No Description")
             self.category = data.get("category", "No Category")
             self.priority = int(data.get("priority", 3))
@@ -65,3 +88,9 @@ class Tasks():
                 self.completed = completed_raw
             else:
                 self.completed = today + timedelta(days=30)
+
+
+if __name__ == "__main__":
+    t = Tasks()
+
+    print(dir(t.db["tasks"][0]))

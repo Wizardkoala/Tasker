@@ -70,7 +70,10 @@
                         {% if task.complete %}
                         <p class="due-date">Completed: {{ task.completed.strftime('%b %d, %Y') }}</p>
                         {% endif %}
-                        <p class="due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
+                        {% if task.repeat["value"] %}
+                        <p class="due-date">Repeats every {{task.repeat["value"]}} {{task.repeat["interval"]}}(s)</p>
+                        {% endif %}
+                        <p class=" due-date">Due: {{ task.due.strftime('%b %d, %Y') }}</p>
                     </div>
                 </div>
                 <form action="/delete/{{ idx }}" method="POST">
