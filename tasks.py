@@ -29,11 +29,19 @@ class Tasks():
         value = task.repeat.get("value", 0)
         interval = task.repeat.get("interval", "day")
         if interval == "day":
-            task.due += timedelta(days=value)
+            delta = timedelta(days=value)
         elif interval == "week":
-            task.due += timedelta(weeks=value)
+            delta = timedelta(weeks=value)
         elif interval == "month":
-            task.due += timedelta(days=value * 30)
+            delta = timedelta(days=value * 30)
+        else:
+            return
+        if task.repeat.get("from_completion"):
+            # Schedule relative to when it was actually completed
+            task.completed = datetime.now()
+            task.due = task.completed + delta
+        else:
+            task.due += delta
 
     def toggle_task(self, task_id):
         """Toggle a task's completion. Handles recurring tasks and subtasks."""

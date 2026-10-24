@@ -162,6 +162,11 @@
                                         Months</option>
                                 </select>
                             </div>
+                            <div class="edit-row">
+                                <label><input type="checkbox" name="from_completion" {% if
+                                        task.repeat.get('from_completion') %}checked{% endif %}> Repeat from completion
+                                    date</label>
+                            </div>
                         </div>
                         <div class="edit-form-actions">
                             <button type="submit">Save</button>
@@ -214,6 +219,8 @@
                             <option value="month">Months</option>
                         </select>
                     </div>
+                    <label style="display:block; margin-top:6px;"><input type="checkbox" name="from_completion"
+                            style="width:auto"> Repeat from completion date</label>
                 </div>
                 <button type="submit" style="width: 100%;">Save Task</button>
             </form>
@@ -299,6 +306,9 @@
                                 <input type="date" name="due" value="${task.due_iso}">
                                 <input type="number" name="repeat_value" value="${task.repeat.value}" min="0" style="width:60px">
                                 <select name="repeat_interval">${optInterval()}</select>
+                            </div>
+                            <div class="edit-row">
+                                <label><input type="checkbox" name="from_completion"${task.repeat.from_completion ? ' checked' : ''}> Repeat from completion date</label>
                             </div>
                         </div>
                         <div class="edit-form-actions">

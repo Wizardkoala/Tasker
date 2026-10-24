@@ -129,7 +129,8 @@ def edit_task(task_id):
             "due":         request.form.get("due") or old.due.strftime('%Y-%m-%d'),
             "repeat": {
                 "value":    int(request.form.get("repeat_value", 0) or 0),
-                "interval": request.form.get("repeat_interval", "day")
+                "interval": request.form.get("repeat_interval", "day"),
+                "from_completion": request.form.get("from_completion") == "on"
             },
             "complete":  old.complete,
             "completed": old.completed,
@@ -153,7 +154,8 @@ def add_task():
         "due": request.form.get("due"),
         "repeat": {
             "value": repeat_value,
-            "interval": request.form.get("repeat_interval", "day")
+            "interval": request.form.get("repeat_interval", "day"),
+            "from_completion": request.form.get("from_completion") == "on"
         }
     }
     
@@ -215,4 +217,4 @@ def clear_completed():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host="10.0.0.164", port=80)
+    app.run(debug=True, host="0.0.0.0", port=2000)
